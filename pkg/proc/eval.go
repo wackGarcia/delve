@@ -301,6 +301,11 @@ func (scope *EvalScope) SetVariable(name, value string) error {
 
 // LocalVariables returns all local variables from the current function scope.
 func (scope *EvalScope) LocalVariables(cfg LoadConfig) ([]*Variable, error) {
+	scopeMem := scope.Mem
+	batchMem := make(BatchMemoryReader)
+	scope.Mem = batchMem
+	defer func() { scope.Mem = scopeMem }()
+
 	vars, err := scope.Locals()
 	if err != nil {
 		return nil, err
@@ -309,6 +314,10 @@ func (scope *EvalScope) LocalVariables(cfg LoadConfig) ([]*Variable, error) {
 		return (v.Flags & (VariableArgument | VariableReturnArgument)) == 0
 	})
 	cfg.MaxMapBuckets = maxMapBucketsFactor * cfg.MaxArrayValues
+	loadValues(vars, cfg)
+	if err := batchMem.BatchRead(scope.g.Thread.ThreadID(), scopeMem); err != nil {
+		return nil, err
+	}
 	loadValues(vars, cfg)
 	return vars, nil
 }

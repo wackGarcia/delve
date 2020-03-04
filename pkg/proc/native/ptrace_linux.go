@@ -1,7 +1,6 @@
 package native
 
 import (
-	"errors"
 	"syscall"
 	"unsafe"
 
@@ -63,24 +62,6 @@ func ProcessVmRead(tid int, addr uintptr, data []byte) (int, error) {
 		return 0, err
 	}
 	return int(n), nil
-}
-
-func ProcessVmReadBatch(tid int, vecs [][]byte) (int, error) {
-	// localvecs := make([]sys.Iovec, 0, len(vecs))
-	// remotevecs := make([]sys.Iovec, 0, len(vecs))
-	// for i := range vecs {
-	// 	len_iov := uint64(len(vecs[i].data))
-	// 	local_iov := sys.Iovec{Base: &vecs[i].data[0], Len: len_iov}
-	// 	remote_iov := sys.Iovec{Base: (*byte)(unsafe.Pointer(addr)), Len: len_iov}
-	// 	append(localvecs, uintptr(unsafe.Pointer(&local_iov)))
-	// 	append(remotevecs, uintptr(unsafe.Pointer(&remote_iov)))
-	// }
-	// n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_READV, uintptr(tid), &localvecs[0], len(localvecs), &remotevecs[0], len(remotevecs), 0)
-	// if err != syscall.Errno(0) {
-	// 	return 0, err
-	// }
-	// return int(n), nil
-	return 0, errors.New("not implemented")
 }
 
 // ProcessVmWrite calls process_vm_writev

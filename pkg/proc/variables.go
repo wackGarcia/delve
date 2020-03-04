@@ -936,7 +936,10 @@ func (v *Variable) loadValue(cfg LoadConfig) {
 }
 
 func (v *Variable) loadValueInternal(recurseLevel int, cfg LoadConfig) {
-	if v.Unreadable != nil || v.loaded || (v.Addr == 0 && v.Base == 0) {
+	//if v.Unreadable != nil || v.loaded || (v.Addr == 0 && v.Base == 0) {
+	//return
+	//}
+	if v.Unreadable != nil || (v.Addr == 0 && v.Base == 0) {
 		return
 	}
 

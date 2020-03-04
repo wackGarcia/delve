@@ -1605,11 +1605,12 @@ func TestPointerLoops(t *testing.T) {
 }
 
 func BenchmarkLocalVariables(b *testing.B) {
-	protest.AllowRecording(b)
+	//protest.AllowRecording(b)
 	withTestProcess("testvariables", b, func(p *proc.Target, fixture protest.Fixture) {
 		assertNoError(proc.Continue(p), b, "Continue() returned an error")
 		scope, err := proc.GoroutineScope(p.CurrentThread())
 		assertNoError(err, b, "Scope()")
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, err := scope.LocalVariables(normalLoadConfig)
 			assertNoError(err, b, "LocalVariables()")

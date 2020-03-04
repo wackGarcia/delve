@@ -1,6 +1,7 @@
 package native
 
 import (
+	"errors"
 	"syscall"
 	"unsafe"
 
@@ -31,7 +32,7 @@ func PtraceSingleStep(tid int) error {
 	return sys.PtraceSingleStep(tid)
 }
 
-// PtracePokeUser execute ptrace PTRACE_POKE_USER.
+// PtracePokeUser executes ptrace PTRACE_POKE_USER.
 func PtracePokeUser(tid int, off, addr uintptr) error {
 	_, _, err := sys.Syscall6(sys.SYS_PTRACE, sys.PTRACE_POKEUSR, uintptr(tid), uintptr(off), uintptr(addr), 0, 0)
 	if err != syscall.Errno(0) {
@@ -40,7 +41,7 @@ func PtracePokeUser(tid int, off, addr uintptr) error {
 	return nil
 }
 
-// PtracePeekUser execute ptrace PTRACE_PEEK_USER.
+// PtracePeekUser executes ptrace PTRACE_PEEK_USER.
 func PtracePeekUser(tid int, off uintptr) (uintptr, error) {
 	var val uintptr
 	_, _, err := syscall.Syscall6(syscall.SYS_PTRACE, syscall.PTRACE_PEEKUSR, uintptr(tid), uintptr(off), uintptr(unsafe.Pointer(&val)), 0, 0)
@@ -48,4 +49,50 @@ func PtracePeekUser(tid int, off uintptr) (uintptr, error) {
 		return 0, err
 	}
 	return val, nil
+}
+
+// ProcessVmRead calls process_vm_readv
+func ProcessVmRead(tid int, addr uintptr, data []byte) (int, error) {
+	len_iov := uint64(len(data))
+	local_iov := sys.Iovec{Base: &data[0], Len: len_iov}
+	remote_iov := sys.Iovec{Base: (*byte)(unsafe.Pointer(addr)), Len: len_iov}
+	p_local := uintptr(unsafe.Pointer(&local_iov))
+	p_remote := uintptr(unsafe.Pointer(&remote_iov))
+	n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_READV, uintptr(tid), p_local, 1, p_remote, 1, 0)
+	if err != syscall.Errno(0) {
+		return 0, err
+	}
+	return int(n), nil
+}
+
+func ProcessVmReadBatch(tid int, vecs [][]byte) (int, error) {
+	// localvecs := make([]sys.Iovec, 0, len(vecs))
+	// remotevecs := make([]sys.Iovec, 0, len(vecs))
+	// for i := range vecs {
+	// 	len_iov := uint64(len(vecs[i].data))
+	// 	local_iov := sys.Iovec{Base: &vecs[i].data[0], Len: len_iov}
+	// 	remote_iov := sys.Iovec{Base: (*byte)(unsafe.Pointer(addr)), Len: len_iov}
+	// 	append(localvecs, uintptr(unsafe.Pointer(&local_iov)))
+	// 	append(remotevecs, uintptr(unsafe.Pointer(&remote_iov)))
+	// }
+	// n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_READV, uintptr(tid), &localvecs[0], len(localvecs), &remotevecs[0], len(remotevecs), 0)
+	// if err != syscall.Errno(0) {
+	// 	return 0, err
+	// }
+	// return int(n), nil
+	return 0, errors.New("not implemented")
+}
+
+// ProcessVmWrite calls process_vm_writev
+func ProcessVmWrite(tid int, addr uintptr, data []byte) (int, error) {
+	len_iov := uint64(len(data))
+	local_iov := sys.Iovec{Base: &data[0], Len: len_iov}
+	remote_iov := sys.Iovec{Base: (*byte)(unsafe.Pointer(addr)), Len: len_iov}
+	p_local := uintptr(unsafe.Pointer(&local_iov))
+	p_remote := uintptr(unsafe.Pointer(&remote_iov))
+	n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_WRITEV, uintptr(tid), p_local, 1, p_remote, 1, 0)
+	if err != syscall.Errno(0) {
+		return 0, err
+	}
+	return int(n), nil
 }

@@ -71,6 +71,8 @@ func cacheMemory(mem MemoryReadWriter, addr uintptr, size int) MemoryReadWriter 
 		}
 	case *compositeMemory:
 		return mem
+	case BatchMemory:
+		return mem
 	}
 	return &memCache{false, addr, make([]byte, size), mem}
 }

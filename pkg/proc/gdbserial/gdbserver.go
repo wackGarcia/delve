@@ -1256,6 +1256,16 @@ func (t *Thread) ReadMemory(data []byte, addr uintptr) (n int, err error) {
 	return len(data), nil
 }
 
+// ReadMemory will read into 'data' memory at the address provided.
+func (t *Thread) BatchRead(vecs map[uintptr][]byte) error {
+	for addr, data := range vecs {
+		if err := t.p.conn.readMemory(data, addr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // WriteMemory will write into the memory at 'addr' the data provided.
 func (t *Thread) WriteMemory(addr uintptr, data []byte) (written int, err error) {
 	return t.p.conn.writeMemory(addr, data)

@@ -82,21 +82,39 @@ const (
 // and the memory of the debugged process.
 // If OnlyAddr is true, the variables value has not been loaded.
 type Variable struct {
-	Addr      uintptr
-	OnlyAddr  bool
-	Name      string
+	// Addr is the address in memory of this variable.
+	Addr uintptr
+	// OnlyAddr is true if the value of this variable has not been loaded.
+	OnlyAddr bool
+	// Name is the name of this variable.
+	Name string
+	// DwarfType holds the type of this variable as represented by DWARF debug information.
 	DwarfType godwarf.Type
-	RealType  godwarf.Type
-	Kind      reflect.Kind
-	mem       MemoryReadWriter
-	bi        *BinaryInfo
+	// RealType is the type of this variable after resolving any typedef(s).
+	RealType godwarf.Type
+	// Kind is the kind of this variable.
+	Kind reflect.Kind
 
-	Value        constant.Value
+	// The memory read writer used to load this variables value.
+	mem MemoryReadWriter
+	bi  *BinaryInfo
+
+	// data is the raw bytes for the value of this variable.
+	data []byte
+
+	// Value is the loaded and parsed value of this variable.
+	Value constant.Value
+	// FloatSpecial holds information on the type of floating point number this variable
+	// represents.
 	FloatSpecial floatSpecial
 
+	// Len is the length field for a slice.
 	Len int64
+	// Cap is the cap field for a slice.
 	Cap int64
 
+	// Flags holds information on this variable such as whether it escapes into the heap,
+	// if it is a return value, and more.
 	Flags variableFlags
 
 	// Base address of arrays, Base address of the backing array for slices (0 for nil slices)
@@ -113,13 +131,19 @@ type Variable struct {
 	// number of elements to skip when loading a map
 	mapSkip int
 
+	// Children holds a reference to slice members, values pointer to by pointer, etc.
 	Children []Variable
 
-	loaded     bool
+	// loaded is whether or not this variables value has been loaded.
+	loaded bool
+
+	// Unreadable is an error that was encountered when trying to read the value of this variable.
 	Unreadable error
 
-	LocationExpr string // location expression
-	DeclLine     int64  // line number of this variable's declaration
+	// LocationExpr is the location expression string for this variable.
+	LocationExpr string
+	// DeclLine is the line number of this variable's declaration
+	DeclLine int64
 }
 
 // LoadConfig controls how variables are loaded from the targets memory.
@@ -924,7 +948,10 @@ func (v *Variable) loadValue(cfg LoadConfig) {
 }
 
 func (v *Variable) loadValueInternal(recurseLevel int, cfg LoadConfig) {
-	if v.Unreadable != nil || v.loaded || (v.Addr == 0 && v.Base == 0) {
+	//if v.Unreadable != nil || v.loaded || (v.Addr == 0 && v.Base == 0) {
+	//return
+	//}
+	if v.Unreadable != nil || (v.Addr == 0 && v.Base == 0) {
 		return
 	}
 
@@ -963,8 +990,10 @@ func (v *Variable) loadValueInternal(recurseLevel int, cfg LoadConfig) {
 		}
 
 	case reflect.String:
-		var val string
-		val, v.Unreadable = readStringValue(DereferenceMemory(v.mem), v.Base, v.Len, cfg)
+		if v.data == nil {
+			v.data, v.Unreadable = readStringValue(DereferenceMemory(v.mem), v.Base, v.Len, cfg)
+		}
+		val := *(*string)(unsafe.Pointer(&v.data))
 		v.Value = constant.MakeString(val)
 
 	case reflect.Slice, reflect.Array:
@@ -1004,11 +1033,14 @@ func (v *Variable) loadValueInternal(recurseLevel int, cfg LoadConfig) {
 		v.Value = constant.MakeUint64(val)
 
 	case reflect.Bool:
-		val := make([]byte, 1)
-		_, err := v.mem.ReadMemory(val, v.Addr)
-		v.Unreadable = err
+		var err error
+		if v.data == nil {
+			v.data = make([]byte, 1)
+			_, err = v.mem.ReadMemory(v.data, v.Addr)
+			v.Unreadable = err
+		}
 		if err == nil {
-			v.Value = constant.MakeBool(val[0] != 0)
+			v.Value = constant.MakeBool(v.data[0] != 0)
 		}
 	case reflect.Float32, reflect.Float64:
 		var val float64
@@ -1085,9 +1117,9 @@ func readStringInfo(mem MemoryReadWriter, arch Arch, addr uintptr) (uintptr, int
 	return addr, strlen, nil
 }
 
-func readStringValue(mem MemoryReadWriter, addr uintptr, strlen int64, cfg LoadConfig) (string, error) {
+func readStringValue(mem MemoryReadWriter, addr uintptr, strlen int64, cfg LoadConfig) ([]byte, error) {
 	if strlen == 0 {
-		return "", nil
+		return nil, nil
 	}
 
 	count := strlen
@@ -1098,12 +1130,9 @@ func readStringValue(mem MemoryReadWriter, addr uintptr, strlen int64, cfg LoadC
 	val := make([]byte, int(count))
 	_, err := mem.ReadMemory(val, addr)
 	if err != nil {
-		return "", fmt.Errorf("could not read string at %#v due to %s", addr, err)
+		return nil, fmt.Errorf("could not read string at %#v due to %s", addr, err)
 	}
-
-	retstr := *(*string)(unsafe.Pointer(&val))
-
-	return retstr, nil
+	return val, nil
 }
 
 const (

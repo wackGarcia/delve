@@ -115,3 +115,10 @@ func (t *Thread) ReadMemory(data []byte, addr uintptr) (n int, err error) {
 	}
 	return
 }
+
+// BatchRead uses process_vm_read to read multiple discontiguous areas of memory
+// in a single syscall.
+func (t *Thread) BatchRead(vecs map[uintptr][]byte) error {
+	_, err := ProcessVmReadBatch(t.ThreadID(), vecs)
+	return err
+}

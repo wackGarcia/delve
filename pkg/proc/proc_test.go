@@ -1610,6 +1610,7 @@ func BenchmarkLocalVariables(b *testing.B) {
 		assertNoError(proc.Continue(p), b, "Continue() returned an error")
 		scope, err := proc.GoroutineScope(p.CurrentThread())
 		assertNoError(err, b, "Scope()")
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, err := scope.LocalVariables(normalLoadConfig)
 			assertNoError(err, b, "LocalVariables()")

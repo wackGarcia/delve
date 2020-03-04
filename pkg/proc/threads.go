@@ -16,6 +16,13 @@ import (
 // Thread represents a thread.
 type Thread interface {
 	MemoryReadWriter
+
+	// BatchRead executes a batches memory read on supported backends.
+	// This allows for reading multiple locations in memory in a single syscall.
+	// On backends that do not support this in a single syscall there will instead
+	// be a syscall per location that must be read.
+	BatchRead(map[uintptr][]byte) error
+
 	Location() (*Location, error)
 	// Breakpoint will return the breakpoint that this thread is stopped at or
 	// nil if the thread is not stopped at any breakpoint.

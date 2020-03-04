@@ -31,7 +31,7 @@ func PtraceSingleStep(tid int) error {
 	return sys.PtraceSingleStep(tid)
 }
 
-// PtracePokeUser execute ptrace PTRACE_POKE_USER.
+// PtracePokeUser executes ptrace PTRACE_POKE_USER.
 func PtracePokeUser(tid int, off, addr uintptr) error {
 	_, _, err := sys.Syscall6(sys.SYS_PTRACE, sys.PTRACE_POKEUSR, uintptr(tid), uintptr(off), uintptr(addr), 0, 0)
 	if err != syscall.Errno(0) {
@@ -40,7 +40,7 @@ func PtracePokeUser(tid int, off, addr uintptr) error {
 	return nil
 }
 
-// PtracePeekUser execute ptrace PTRACE_PEEK_USER.
+// PtracePeekUser executes ptrace PTRACE_PEEK_USER.
 func PtracePeekUser(tid int, off uintptr) (uintptr, error) {
 	var val uintptr
 	_, _, err := syscall.Syscall6(syscall.SYS_PTRACE, syscall.PTRACE_PEEKUSR, uintptr(tid), uintptr(off), uintptr(unsafe.Pointer(&val)), 0, 0)

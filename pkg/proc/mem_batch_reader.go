@@ -25,12 +25,12 @@ func (br BatchMemoryReader) WriteMemory(addr uintptr, data []byte) (written int,
 func (br BatchMemoryReader) BatchRead(tid int, mem MemoryReadWriter) error {
 	_, err := ProcessVmReadBatch(tid, br)
 	return err
-	for addr, buf := range br {
-		if _, err := mem.ReadMemory(buf, addr); err != nil {
-			return err
-		}
-	}
-	return nil //errors.New("not implemented")
+	// 	for addr, buf := range br {
+	// 		if _, err := mem.ReadMemory(buf, addr); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// 	return nil //errors.New("not implemented")
 }
 
 func ProcessVmReadBatch(tid int, vecs map[uintptr][]byte) (int, error) {

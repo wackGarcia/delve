@@ -21,11 +21,13 @@ type Iovec struct {
 
 // ProcessVmRead calls process_vm_readv.
 func ProcessVmRead(tid int, addr uintptr, data []byte) (int, error) {
-	len_iov := uint64(len(data))
-	local_iov := Iovec{Base: uintptr(unsafe.Pointer(&data[0])), Len: len_iov}
-	remote_iov := Iovec{Base: uintptr(unsafe.Pointer(addr)), Len: len_iov}
-	p_local := uintptr(unsafe.Pointer(&local_iov))
-	p_remote := uintptr(unsafe.Pointer(&remote_iov))
+	var (
+		len_iov    = uint64(len(data))
+		local_iov  = Iovec{Base: uintptr(unsafe.Pointer(&data[0])), Len: len_iov}
+		remote_iov = Iovec{Base: uintptr(unsafe.Pointer(addr)), Len: len_iov}
+		p_local    = uintptr(unsafe.Pointer(&local_iov))
+		p_remote   = uintptr(unsafe.Pointer(&remote_iov))
+	)
 	n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_READV, uintptr(tid), p_local, 1, p_remote, 1, 0)
 	if err != syscall.Errno(0) {
 		return 0, err
@@ -35,11 +37,13 @@ func ProcessVmRead(tid int, addr uintptr, data []byte) (int, error) {
 
 // ProcessVmWrite calls process_vm_writev.
 func ProcessVmWrite(tid int, addr uintptr, data []byte) (int, error) {
-	len_iov := uint64(len(data))
-	local_iov := Iovec{Base: uintptr(unsafe.Pointer(&data[0])), Len: len_iov}
-	remote_iov := Iovec{Base: uintptr(unsafe.Pointer(addr)), Len: len_iov}
-	p_local := uintptr(unsafe.Pointer(&local_iov))
-	p_remote := uintptr(unsafe.Pointer(&remote_iov))
+	var (
+		len_iov    = uint64(len(data))
+		local_iov  = Iovec{Base: uintptr(unsafe.Pointer(&data[0])), Len: len_iov}
+		remote_iov = Iovec{Base: uintptr(unsafe.Pointer(addr)), Len: len_iov}
+		p_local    = uintptr(unsafe.Pointer(&local_iov))
+		p_remote   = uintptr(unsafe.Pointer(&remote_iov))
+	)
 	n, _, err := syscall.Syscall6(sys.SYS_PROCESS_VM_WRITEV, uintptr(tid), p_local, 1, p_remote, 1, 0)
 	if err != syscall.Errno(0) {
 		return 0, err
@@ -49,8 +53,15 @@ func ProcessVmWrite(tid int, addr uintptr, data []byte) (int, error) {
 
 // ProcessVmReadBatch reads data from multiple addresses in a single syscall.
 func ProcessVmReadBatch(tid int, vecs map[uintptr][]byte) (int, error) {
-	localvecs := make([]Iovec, 0, 10)
-	remotevecs := make([]Iovec, 0, 10)
+	if len(vecs) == 0 {
+		return 0, nil
+	}
+
+	var (
+		localvecs  = make([]Iovec, 0, 10)
+		remotevecs = make([]Iovec, 0, 10)
+	)
+
 	for addr, buf := range vecs {
 		len_iov := uint64(len(buf))
 		localvecs = append(localvecs, Iovec{Base: uintptr(unsafe.Pointer(&buf[0])), Len: len_iov})

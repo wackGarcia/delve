@@ -272,6 +272,19 @@ func (t *Thread) ReadMemory(data []byte, addr uintptr) (n int, err error) {
 	return n, err
 }
 
+// BatchRead will perform sequential reads of the data in 'vecs', for every
+// address the corresponding buffer will be filled with data.
+// TODO: We can use process_vm_readv on Linux to batch these reads into
+// a single syscall.
+func (t *Thread) BatchRead(vecs map[uintptr][]byte) error {
+	for addr, data := range vecs {
+		if _, err := t.ReadMemory(data, addr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // WriteMemory will only return an error for core files, you cannot write
 // to the memory of a core process.
 func (t *Thread) WriteMemory(addr uintptr, data []byte) (int, error) {

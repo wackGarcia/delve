@@ -358,7 +358,6 @@ func (v *Variable) writeSliceOrArrayTo(buf io.Writer, newlines bool, indent stri
 }
 
 func PrettyExamineMemory(address uintptr, memArea []byte, format byte) string {
-
 	var (
 		cols      int
 		colFormat string

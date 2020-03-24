@@ -302,7 +302,7 @@ func (scope *EvalScope) SetVariable(name, value string) error {
 // LocalVariables returns all local variables from the current function scope.
 func (scope *EvalScope) LocalVariables(cfg LoadConfig) ([]*Variable, error) {
 	scopeMem := scope.Mem
-	batchMem := make(BatchMemory)
+	batchMem := NewBatchMemory(scopeMem)
 	scope.Mem = batchMem
 	defer func() { scope.Mem = scopeMem }()
 
@@ -325,7 +325,7 @@ func (scope *EvalScope) LocalVariables(cfg LoadConfig) ([]*Variable, error) {
 func (scope *EvalScope) FunctionArguments(cfg LoadConfig) (vars []*Variable, err error) {
 	if scope.g != nil && scope.g.Thread != nil {
 		scopeMem := scope.Mem
-		batchMem := make(BatchMemory)
+		batchMem := NewBatchMemory(scopeMem)
 		scope.Mem = batchMem
 		defer func() {
 			scope.Mem = scopeMem
@@ -363,7 +363,7 @@ func regsReplaceStaticBase(regs op.DwarfRegisters, image *Image) op.DwarfRegiste
 // PackageVariables returns the name, value, and type of all package variables in the application.
 func (scope *EvalScope) PackageVariables(cfg LoadConfig) ([]*Variable, error) {
 	scopeMem := scope.Mem
-	batchMem := make(BatchMemory)
+	batchMem := NewBatchMemory(scopeMem)
 	scope.Mem = batchMem
 	defer func() { scope.Mem = scopeMem }()
 
@@ -394,10 +394,10 @@ func (scope *EvalScope) PackageVariables(cfg LoadConfig) ([]*Variable, error) {
 			if err != nil {
 				continue
 			}
-			val.loadValue(cfg)
 			vars = append(vars, val)
 		}
 	}
+	loadValues(vars, cfg)
 
 	if err := batchMem.BatchRead(scope.g.Thread, scopeMem); err != nil {
 		return nil, err

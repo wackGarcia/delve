@@ -49,7 +49,7 @@ type osProcessDetails struct {
 // to be supplied to that process. `wd` is working directory of the program.
 // If the DWARF information cannot be found in the binary, Delve will look
 // for external debug files in the directories passed in.
-func Launch(cmd []string, wd string, foreground bool, debugInfoDirs []string) (*proc.Target, error) {
+func Launch(cmd []string, wd string, foreground bool, debugInfoDirs []string, tty string) (*proc.Target, error) {
 	var (
 		process *exec.Cmd
 		err     error
@@ -67,10 +67,23 @@ func Launch(cmd []string, wd string, foreground bool, debugInfoDirs []string) (*
 		process.Args = cmd
 		process.Stdout = os.Stdout
 		process.Stderr = os.Stderr
-		process.SysProcAttr = &syscall.SysProcAttr{Ptrace: true, Setpgid: true, Foreground: foreground}
+		process.SysProcAttr = &syscall.SysProcAttr{
+			Ptrace:     true,
+			Setpgid:    true,
+			Foreground: foreground,
+		}
 		if foreground {
 			signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
 			process.Stdin = os.Stdin
+		}
+		if tty != "" {
+			dbp.ctty, err = os.Open(tty)
+			if err != nil {
+				return
+			}
+			process.SysProcAttr.Setsid = true
+			process.SysProcAttr.Setctty = true
+			process.SysProcAttr.Ctty = int(dbp.ctty.Fd())
 		}
 		if wd != "" {
 			process.Dir = wd
